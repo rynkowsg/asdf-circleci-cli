@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+#  Copyright (c) 2026 Greg Rynkowski. All rights reserved.
+#  License: MIT License
+
+###
+#  Script used to download package by 'install' command
+#
+#  Standalone usage:
+#
+#    ASDF_DOWNLOAD_PATH=tmp-downloads ASDF_INSTALL_VERSION=1.0.48773 ./bin/download
+#
+#  To see debug logs use env var `DEBUG=true`.
+###
+
+# Bash Strict Mode Settings
+set -euo pipefail
+# Path Initialization
+if [ -z "${SHELL_GR_DIR:-}" ]; then
+  SCRIPT_PATH_1="${BASH_SOURCE[0]:-$0}"
+  SCRIPT_PATH="$([[ ! "${SCRIPT_PATH_1}" =~ /bash$ ]] && readlink -f "${SCRIPT_PATH_1}" || echo "")"
+  SCRIPT_DIR="$([ -n "${SCRIPT_PATH}" ] && (cd "$(dirname "${SCRIPT_PATH}")" && pwd -P) || echo "")"
+  ROOT_DIR="$([ -n "${SCRIPT_DIR}" ] && (cd "${SCRIPT_DIR}/.." && pwd -P) || echo "/tmp")"
+  export SHELL_GR_DIR="${ROOT_DIR}/lib/.github_deps/rynkowsg/shell-gr@49aff37" # needed for shell-gr to resolve paths
+fi
+# Library Sourcing
+source "${ROOT_DIR}/lib/.github_deps/rynkowsg/shell-gr@49aff37/lib/error.bash"                # fail
+source "${ROOT_DIR}/lib/.github_deps/rynkowsg/shell-gr@49aff37/lib/install/circleci_cli.bash" # GRI_CIRCLECI_CLI__download
+source "${ROOT_DIR}/lib/.github_deps/rynkowsg/shell-gr@49aff37/lib/log.bash"                  # log_debug
+
+# `bin/download` spec: https://github.com/asdf-vm/asdf/blob/master/docs/plugins/create.md#bindownload-
+main() {
+  # inputs validation
+  [ -z "${ASDF_DOWNLOAD_PATH:-}" ] && fail "ASDF_DOWNLOAD_PATH is required"
+  [ -z "${ASDF_INSTALL_VERSION:-}" ] && fail "ASDF_INSTALL_VERSION is required"
+
+  # Environment Variables available to script
+  log_debug "ASDF_INSTALL_TYPE: ${ASDF_INSTALL_TYPE:-}"
+  log_debug "ASDF_INSTALL_VERSION: ${ASDF_INSTALL_VERSION:-}"
+  log_debug "ASDF_INSTALL_PATH: ${ASDF_INSTALL_PATH:-}"
+  log_debug "ASDF_DOWNLOAD_PATH: ${ASDF_DOWNLOAD_PATH:-}"
+  log_debug "GITHUB_API_TOKEN: ${GITHUB_API_TOKEN:+"<masked>"}"
+
+  GRI_CIRCLECI_CLI__DOWNLOAD_PATH="${ASDF_DOWNLOAD_PATH}" \
+    GRI_CIRCLECI_CLI__GITHUB_API_TOKEN="${GITHUB_API_TOKEN:-}" \
+    GRI_CIRCLECI_CLI__INSTALL_TYPE="${ASDF_INSTALL_TYPE:-"version"}" \
+    GRI_CIRCLECI_CLI__INSTALL_VERSION="${ASDF_INSTALL_VERSION}" \
+    GRI_CIRCLECI_CLI__download
+}
+
+main "$@"

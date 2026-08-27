@@ -1,0 +1,27 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+
+jobs:
+  plugin_test:
+    name: plugin test
+    strategy:
+      matrix:
+        os:
+          # https://github.com/actions/runner-images?tab=readme-ov-file#available-images
+          - ubuntu-22.04
+          - macos-13 # x86_64
+          - macos-14 # arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: asdf_plugin_test
+        uses: asdf-vm/actions/plugin-test@v3.0.2 # https://github.com/asdf-vm/actions/releases
+        with:
+          # the newest release still using the old archive layout
+          version: 0.1.38646
+          command: circleci --help

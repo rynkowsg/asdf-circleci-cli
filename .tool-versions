@@ -1,0 +1,21 @@
+# plugin: https://github.com/asdf-community/asdf-plugin-manager
+# releases: https://github.com/asdf-community/asdf-plugin-manager/releases
+asdf-plugin-manager 1.5.0
+
+# required for: sosh
+# plugin: https://github.com/pitch-io/asdf-babashka
+# releases: https://github.com/babashka/babashka/releases
+babashka 1.13.219
+
+# required for: sosh
+# plugin: https://github.com/halcyon/asdf-java
+# releases: https://adoptium.net/temurin/releases/?os=any&arch=any&version=17
+java temurin-17.0.20+101
+
+# plugin: https://github.com/luizm/asdf-shellcheck
+# releases: https://github.com/koalaman/shellcheck/releases
+shellcheck 0.11.0
+
+# plugin: https://github.com/luizm/asdf-shfmt
+# releases: https://github.com/mvdan/sh/releases
+shfmt 3.13.1
