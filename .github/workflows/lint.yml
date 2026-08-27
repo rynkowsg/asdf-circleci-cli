@@ -1,0 +1,25 @@
+name: Lint
+
+on:
+  # Branches other than 'main' are covered by pull_request, so push only has
+  # to catch what lands on 'main'. Having `branches: ["**"]` would run every
+  # PR branch twice.
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Mondays 04:00 UTC, the same slot as the weekly workflow in .circleci/config.yml.
+    # Catches breakage coming from outside the repo,
+    # e.g. a new release changing the archive layout, or a runner image moving on.
+    - cron: "0 4 * * 1"
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-24.04 # https://github.com/actions/runner-images?tab=readme-ov-file#available-images
+    steps:
+      - uses: actions/checkout@v7.0.1 # https://github.com/actions/checkout/releases
+      - name: Check workflow files
+        uses: docker://rhysd/actionlint:1.7.12 # https://hub.docker.com/r/rhysd/actionlint/tags
+        with:
+          # noinspection UndefinedParamsPresent
+          args: -color

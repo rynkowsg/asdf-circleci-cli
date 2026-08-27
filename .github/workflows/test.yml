@@ -1,0 +1,53 @@
+name: Test
+
+on:
+  # Branches other than 'main' are covered by pull_request, so push only has 
+  # to catch what lands on 'main'. Having `branches: ["**"]` would run every
+  # PR branch twice.
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Mondays 04:00 UTC, the same slot as the weekly workflow in .circleci/config.yml.
+    # Catches breakage coming from outside the repo,
+    # e.g. a new release changing the archive layout, or a runner image moving on.
+    - cron: "0 4 * * 1"
+
+jobs:
+  plugin_test:
+    name: plugin test
+    strategy:
+      # One broken version tells us nothing about the others, so let them all run.
+      fail-fast: false
+      matrix:
+        os:
+          # https://github.com/actions/runner-images?tab=readme-ov-file#available-images
+          - ubuntu-24.04 # x64
+          - ubuntu-24.04-arm # arm64
+          - macos-15 # arm64
+          - macos-15-intel # x64
+          - macos-26 # arm64
+          - macos-26-intel # x64
+        # One version per packaging variant, see the table in
+        # lib/.github_deps/rynkowsg/shell-gr@*/lib/install/circleci_cli.bash.
+        # These four ship assets for every platform and architecture.
+        version:
+          - "0.1.38646" # last wrapped archive
+          - "0.1.47860" # flat archive, binary named circleci-v0
+          - "1.0.46955" # first release of the 1.0 line
+          - "latest"
+        include:
+          # Older releases build only for amd64, and their darwin binaries carry
+          # a Go runtime that no longer starts on current macOS, so x64 Linux is
+          # the only runner left that can run them.
+          - {os: ubuntu-24.04, version: "0.1.6"} # assets named after the binary, not the repo
+          - {os: ubuntu-24.04, version: "0.1.160"} # last release shipping circleci-beta
+          - {os: ubuntu-24.04, version: "0.1.386"} # last flat archive before the wrapped ones
+          - {os: ubuntu-24.04, version: "0.1.390"} # first wrapped archive
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: asdf_plugin_test
+        uses: asdf-vm/actions/plugin-test@v4.0.1 # https://github.com/asdf-vm/actions/releases
+        with:
+          version: ${{ matrix.version }}
+          command: circleci version

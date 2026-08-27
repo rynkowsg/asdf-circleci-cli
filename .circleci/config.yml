@@ -1,0 +1,62 @@
+version: 2.1
+
+orbs:
+  # orb info: https://circleci.com/developer/orbs/orb/rynkowsg/checkout
+  checkout: rynkowsg/checkout@0.3.2
+  # orb info: https://circleci.com/developer/orbs/orb/rynkowsg/rynkowsg
+  rynkowsg: rynkowsg/rynkowsg@0.7.0
+  # inline orb
+  inline:
+    orbs:
+      # orb info: https://circleci.com/developer/orbs/orb/rynkowsg/asdf
+      asdf: rynkowsg/asdf@0.2.0
+    commands:
+      asdf_setup:
+        steps:
+          - asdf/install: {version: 0.15.0}
+          - asdf/cache_restore
+          - run:
+              name: inline/asdf_setup - add plugins & tools
+              command: |
+                git config --global advice.detachedHead false
+                # install asdf-plugin-manager at first
+                asdf plugin-add asdf-plugin-manager https://github.com/asdf-community/asdf-plugin-manager.git
+                asdf install asdf-plugin-manager
+                asdf-plugin-manager add babashka && asdf install babashka
+                asdf-plugin-manager add java && asdf install java
+                asdf-plugin-manager add shellcheck && asdf install shellcheck
+                asdf-plugin-manager add shfmt && asdf install shfmt
+                # review all tools installed
+                set -x
+                bash --version
+                bb --version
+                java --version
+                shellcheck --version
+                shfmt --version
+                set +x
+          - asdf/cache_save
+
+jobs:
+  checks:
+    executor: rynkowsg/docker_x86_cimg_base
+    steps:
+      - checkout/checkout: {depth: 1}
+      - inline/asdf_setup
+      - rynkowsg/install_sosh: { version: "v0.2.0" }
+      - run: make lint
+      - run: make format-check
+
+workflows:
+  lint_and_format:
+    jobs:
+      - checks
+  weekly:
+    triggers:
+      - schedule:
+          # Mondays 04:00 UTC, the same slot as the weekly workflow in .github/workflows/test.yml.
+          # Catches breakage coming from outside the repo,
+          # e.g. the executor image moving on, or a pinned tool that no longer downloads.
+          cron: "0 4 * * 1"
+          filters: {branches: {only: [main]}}
+    jobs:
+      - checks
